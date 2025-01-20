@@ -1,10 +1,10 @@
 # Contributing
 
-First, thank you for your interest in contributing to my project. Below is a list of requirements
+First, thank you for your interest in contributing to Recyclarr! Below is a list of requirements
 that everyone should follow.
 
-1. To avoid wasting your time and effort, please ensure all ideas get discussed first. Either visit
-   [the Ideas discussion board][ideas] and open a thread there. I ask that you do this to avoid the
+1. To avoid wasting your time and effort, please ensure all ideas get discussed first. Visit [the
+   Ideas discussion board][ideas] and open a thread there. I ask that you do this to avoid the
    potential of rejecting work already done in a pull request.
 
 1. **For Markdown changes,** any and all changes must pass configured [markdownlint] rules (see the
@@ -13,8 +13,8 @@ that everyone should follow.
 1. **For C# changes,** code must conform to the project's style. My day to day coding is done in
    Jetbrains Rider. If using that IDE, doing a simple [Code Cleanup] on modified source files should
    be enough. Make sure to select the "Recyclarr Cleanup" profile when you do the code cleanup. If
-   you're using Visual Studio or some other editor, you are on your own. Formatting rules are stored
-   in `src/.editorconfig` and `src/Recyclarr.sln.DotSettings`.
+   you're using Visual Studio, I recommend the Resharper extension. For other editors, you are on
+   your own. Formatting rules are stored in `.editorconfig` and `Recyclarr.sln.DotSettings`.
 
 [ideas]: https://github.com/recyclarr/recyclarr/discussions/categories/ideas
 [markdownlint]: https://github.com/DavidAnson/markdownlint
@@ -24,7 +24,7 @@ that everyone should follow.
 
 The following tools are required:
 
-- .NET SDK 6.0 and tooling (e.g. `dotnet`)
+- .NET SDK 9.0 and tooling (e.g. dotnet CLI, which comes with the SDK)
 - Powershell v5.1 or greater
 - Docker CLI (Docker Desktop on Windows)
 
@@ -33,67 +33,36 @@ The following tools are *highly recommended* but not strictly required:
 - Jetbrains Rider (IDE for editing C# code)
 - Visual Studio Code (install workspace-recommended extensions as well)
 
-Other required tooling can be installed via the `Install-Tooling.ps1` powershell script. It's also a
-good idea to occasionally run this for upgrade purposes, too.
+Other required tooling can be installed via the `scripts/Install-Tooling.ps1` powershell script.
+It's also a good idea to occasionally run this for upgrade purposes, too.
 
 ## Docker Development
 
-The project's `Dockerfile` build requires the Recyclarr build output to be placed in a specific
-location in order to succeed. The location is below, relative to the repository root:
+For more convenient building & testing Docker locally, run the `docker/DockerRun.ps1` script, which
+does the following:
 
-```txt
-docker/artifacts/recyclarr-${{runtime}}
+1. Starts the `docker/debugging/docker-compose.yml` stack, which includes instances of Sonarr,
+   Radarr, and other services that Recyclarr can connect to for testing purposes.
+1. Builds the official Recyclarr image using changes in your working copy, if any.
+1. Runs the locally built Recyclarr docker image as a container in its own compose stack that can
+   talk to the application services started earlier.
+
+The `Dockerfile` is configured to build Recyclarr as part of the image build process. By default, it
+uses the `linux-musl-x64` runtime but you can configure additional architectures if needed, through
+`docker buildx`.
+
+You may also provide runtime arguments to the `docker/DockerRun.ps1` script to run it in manual mode
+instead of cron mode. Example:
+
+```sh
+# Run `recyclarr radarr -h`:
+.\BuildAndRun.ps1 radarr -h
 ```
-
-Where `${{runtime}}` is one of the runtimes compatible with `dotnet publish`, such as
-`linux-musl-x64`.
-
-There is a convenience script named `docker/Build-Artifacts.ps1` that will perform a build and place
-the output in the appropriate location for you. This simplifies the process of testing docker
-locally to these steps:
-
-1. Run the convenience script to build and publish Recyclarr to the Docker artifacts directory:
-
-   ```sh
-   pwsh ci/Build-Artifacts.ps1
-   ```
-
-   > *Note:* The runtime defaults to `linux-musl-x64` but you can pass in an override as the first
-   > placeholder argument to the above command.
-
-1. Execute a Docker build locally via compose:
-
-   ```sh
-   docker compose build --no-cache --progress plain
-   ```
-
-1. Run the container to test it:
-
-   ```sh
-   docker compose run --rm recyclarr sonarr
-   ```
-
-### Build Arguments
-
-- `TARGETPLATFORM` (Default: empty)<br>
-  Required. Specifies the runtime architecture of the image and is used to pull the correct prebuilt
-  binary from the specified Github Release. See the table in the Platform Support section for a list
-  of valid values.
-
-### Platform Support
-
-| Docker Platform | Recyclarr Runtime  |
-| --------------- | ------------------ |
-| `linux/arm/v7`  | `linux-musl-arm`   |
-| `linux/arm64`   | `linux-musl-arm64` |
-| `linux/amd64`   | `linux-musl-x64`   |
 
 ## Conventional Commits
 
-This project uses and enforces a variation of [Conventional Commits][commits]. The below official
-commit types are used:
-
-Official:
+This project uses and enforces [Conventional Commits][commits]. The below official commit types are
+used:
 
 - `build`: Update project files, settings, etc.
 - `chore`: Anything not code related or that falls into other categories.
@@ -106,12 +75,6 @@ Official:
 - `revert`: Prefix to be used for commits made by the `git revert` command.
 - `style`: A whitespace or code cleanup change in code.
 - `test`: Updates to unit test code only.
-
-Specialized:
-
-- `change`: Change to existing functionality.
-- `deprecate`: Deprecation of existing functionality.
-- `remove`: Removal of existing feature.
 
 ## Release Process
 
@@ -126,7 +89,7 @@ committed.
 
 To make a release, follow these steps:
 
-1. Run `Prepare-Release.ps1`. This will do the following:
+1. Run `scripts/Prepare-Release.ps1`. This will do the following:
    1. Update the changelog for the release according to [Keep a Changelog][changelog] rules.
    1. Commit the changelog updates.
    1. Create a tag for the release (using GitVersion).
@@ -149,9 +112,39 @@ The Github Workflows manage the release process after the push by doing the foll
 [release]: https://github.com/recyclarr/recyclarr/releases
 [ghcr]: https://github.com/recyclarr/recyclarr/pkgs/container/recyclarr
 [discord]: https://discord.com/invite/Vau8dZ3
+[dockerhub]: https://hub.docker.com/r/recyclarr/recyclarr
 
 ## Update `.gitignore`
 
-Execute the `Update-Gitignore.ps1` script using Powershell. The working directory *must* be the root
-of the repo. This will pull the latest relevant `.gitignore` patterns from
+Execute the `scripts/Update-Gitignore.ps1` script using Powershell. The working directory *must* be
+the root of the repo. This will pull the latest relevant `.gitignore` patterns from
 [gitignore.io](https://gitignore.io) and commit them automatically to your current branch.
+
+## Testing Discord Notifier
+
+Use Postman to make an HTTP `GET` request to the following URL. Note that `v4.0.0` can be any
+release.
+
+```txt
+https://api.github.com/recyclarr/recyclarr/releases/tags/v4.0.0
+```
+
+Copy the resulting response JSON to a file named `ci/notify/release.json`. In the `ci/notify`
+directory, run these commands to generate the other files needed:
+
+```bash
+jq -r '.assets[].browser_download_url' release.json > assets.txt
+jq -r '.body' release.json > changelog.txt
+```
+
+Also be sure to grab a discord webhook URL to a personal test server of yours. Then run the command
+below (using a Bash terminal)
+
+```bash
+python ./discord_notify.py \
+  --version v4.0.0 \
+  --repo recyclarr/recyclarr \
+  --webhook-url https://discord.com/api/webhooks/your_webhook_url \
+  --changelog ./changelog.txt \
+  --assets ./assets.txt
+```

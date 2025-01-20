@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>recyclarr</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofac" />
+    <PackageReference Include="Autofac.Extras.AggregateService" />
+    <PackageReference Include="Autofac.Extras.Ordering" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Expressions" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Spectre.Console.Analyzer" PrivateAssets="All" />
+    <PackageReference Include="Spectre.Console.Cli" />
+    <PackageReference Include="SuperLinq" />
+    <PackageReference Include="SystemTextJson.JsonDiffPatch" />
+    <PackageReference Include="TestableIO.System.IO.Abstractions" />
+    <PackageReference Include="TestableIO.System.IO.Abstractions.Wrappers" />
+  </ItemGroup>
+
+  <!-- Following found during vulerabilities Code Scan  -->
+  <ItemGroup>
+    <PackageReference Include="GitVersion.MsBuild" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Recyclarr.Core\Recyclarr.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="config-template.yml" />
+  </ItemGroup>
+</Project>

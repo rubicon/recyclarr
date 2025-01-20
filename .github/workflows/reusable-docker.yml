@@ -1,0 +1,82 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+on:
+  workflow_call:
+
+env:
+  SHOULD_PUBLISH: ${{ startsWith(github.ref, 'refs/tags/') || github.ref_name == 'master' }}
+
+jobs:
+  docker:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # avoid shallow clone for GitVersion
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0
+        with:
+          versionSpec: 6.0.x
+
+      - name: Determine Version
+        uses: gittools/actions/gitversion/execute@v0
+        id: gitversion
+
+      - name: Set Docker Tags
+        id: meta
+        uses: docker/metadata-action@v5
+        env:
+          semver: >-
+            type=semver,
+            value=${{ steps.gitversion.outputs.semVer }}
+          prod: >-
+            enable=${{ steps.gitversion.outputs.preReleaseTag == '' }}
+        with:
+          images: |
+            ${{ github.repository }}
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=edge,branch=master
+            ${{ env.semver }},${{ env.prod }},pattern={{version}}
+            ${{ env.semver }},${{ env.prod }},pattern={{major}}.{{minor}}
+            ${{ env.semver }},${{ env.prod }},pattern={{major}}
+
+      - name: Login to Docker Hub
+        if: env.SHOULD_PUBLISH == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GHCR
+        if: env.SHOULD_PUBLISH == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Image
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_SUMMARY: false
+          DOCKER_BUILD_RECORD_UPLOAD: false
+        with:
+          context: .
+          push: ${{ env.SHOULD_PUBLISH == 'true' }}
+          no-cache: true
+          platforms: linux/arm/v7,linux/arm64,linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Added to prevent tons of untagged images in GHCR.
+          # See: https://github.com/docker/build-push-action/issues/894
+          provenance: false

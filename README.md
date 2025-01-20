@@ -1,44 +1,43 @@
 # Recyclarr
 
-[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/recyclarr/recyclarr/blob/master/LICENSE)
-![build status](https://github.com/recyclarr/recyclarr/actions/workflows/build.yml/badge.svg?branch=master)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=recyclarr_recyclarr&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=recyclarr_recyclarr)
-[![GitHub release](https://img.shields.io/github/release/recyclarr/recyclarr.svg)](https://github.com/recyclarr/recyclarr/releases/)
-[![Support Server](https://img.shields.io/discord/492590071455940612.svg?color=7289da&label=TRaSH-Guides&logo=discord&style=flat-square)](https://discord.com/invite/Vau8dZ3)
+[![GitHub License](https://img.shields.io/github/license/recyclarr/recyclarr)](https://github.com/recyclarr/recyclarr/blob/master/LICENSE)
+[![Build Workflow Status](https://img.shields.io/github/actions/workflow/status/recyclarr/recyclarr/build.yml?branch=master&logo=githubactions)](https://github.com/recyclarr/recyclarr/actions/workflows/build.yml?query=branch%3Amaster)
+[![Sonar Quality Gate](https://img.shields.io/sonar/quality_gate/recyclarr_recyclarr?server=https%3A%2F%2Fsonarcloud.io&logo=sonarcloud)](https://sonarcloud.io/summary/new_code?id=recyclarr_recyclarr)
+[![GitHub Release](https://img.shields.io/github/v/release/recyclarr/recyclarr?logo=github)](https://github.com/recyclarr/recyclarr/releases/)
+[![Discord](https://img.shields.io/discord/492590071455940612?label=TRaSH-Guides&logo=discord)](https://discord.com/invite/Vau8dZ3)
 
 A command-line application that will automatically synchronize recommended settings from the [TRaSH
 guides](https://trash-guides.info/) to your Sonarr/Radarr instances.
 
-Formerly named "Trash Updater".
-
 ## Features
 
-The following information can be synced to \*arr services from the TRaSH Guides. For a more detailed
-features list, see the [Features] page.
+Recyclarr supports Radarr and Sonarr (v4 and higher only). The following information can be synced
+to these services from the TRaSH Guides. For a more detailed features list, see the [Features] page.
 
-[Features]: https://recyclarr.dev/wiki/features
+[Features]: https://recyclarr.dev/wiki/features/
 
-**Sonarr**:
+- Quality Profiles, including qualities and quality groups
+- Custom Formats, including scores (from guide or manual)
+- Quality Definitions (file sizes)
+- Media Naming Formats
 
-- Sync Release Profiles from the guide to Sonarr v3.
-- Supports Sonarr v4 Custom Formats.
-- Sync Quality Definitions (sizes) from the guide.
-- Add Tags to Release Profiles.
-- Assign scores from the guide to quality profiles.
+## Read the Documentation
 
-**Radarr**:
-
-- Sync Custom Formats from the guide.
-- Sync Quality Definitions from the guide.
-- Assign CF scores to quality profile (manual or use values from the guide).
-
-### Read the Documentation
+[![view - Documentation](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](https://recyclarr.dev/)
 
 Main documentation is located in [the wiki](https://recyclarr.dev/wiki). Links provided below for
 some main topics.
 
 - [Installation](https://recyclarr.dev/wiki/installation/)
-- [Command Line Reference](https://recyclarr.dev/wiki/reference/cli-reference)
-- [Configuration Reference](https://recyclarr.dev/wiki/reference/config-reference)
-- [Settings Reference](https://recyclarr.dev/wiki/reference/settings-reference)
-- [Troubleshooting](https://recyclarr.dev/wiki/troubleshooting)
+- [Command Line Reference](https://recyclarr.dev/wiki/cli/)
+- [Configuration Reference](https://recyclarr.dev/wiki/yaml/config-reference/)
+- [Settings Reference](https://recyclarr.dev/wiki/yaml/settings-reference/)
+- [Troubleshooting](https://recyclarr.dev/wiki/troubleshooting/help/)
+- [Upgrade Guides](https://recyclarr.dev/wiki/upgrade-guide/)
+
+## Supported By
+
+<!-- markdownlint-disable MD033 MD013 -->
+<a href="https://www.jetbrains.com/rider/" target="_blank"><img src="https://resources.jetbrains.com/storage/products/company/brand/logos/Rider_icon.svg" alt="Jetbrains Rider" style="margin-right: 10px;"></a>
+<a href="https://www.jetbrains.com/qodana/" target="_blank"><img src="https://resources.jetbrains.com/storage/products/company/brand/logos/Qodana_icon.svg" alt="Jetbrains Qodana"></a>
+<!-- markdownlint-enable MD033 MD013 -->

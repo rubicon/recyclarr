@@ -5,66 +5,45 @@ on:
   # Do not run on pull-request because the required tokens
   # cannot be read from there.
   push:
+    # Explicitly specifying this results in tags being ignored, which is the goal.
+    branches: ["**"]
     paths:
       - .github/workflows/sonarcloud.yml
-      - "src/**"
+      - sonar-project.properties
+      - '**.props'
+      - 'src/**'
+      - 'tests/**'
+      - 'ci/**'
+
+  pull_request:
+    paths:
+      - .github/workflows/sonarcloud.yml
+      - sonar-project.properties
+      - '**.props'
+      - 'src/**'
+      - 'tests/**'
+      - 'ci/**'
 
 env:
-  dotnetVersion: "6.0.x"
+  dotnetVersion: 9.0.x
 
 jobs:
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
-    env:
-      DOTNET_ROLL_FORWARD: LatestMajor
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Get Source Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # avoid shallow clone for GitVersion
+          fetch-depth: 0 # avoid shallow clone for GitVersion and Sonar analysis
 
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.dotnetVersion }}
 
-      - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v0.9.7
-        with:
-          versionSpec: 5.x
+      - name: Install Tooling
+        run: dotnet tool restore
 
-      - name: Determine Version
-        uses: gittools/actions/gitversion/execute@v0.9.7
-        id: gitversion
-
-      - name: Install Sonar Scanner
-        run: dotnet tool install --global dotnet-sonarscanner
-
-      - name: Begin Sonar Scanner
-        run: >
-          dotnet sonarscanner begin
-          -o:"recyclarr"
-          -k:"recyclarr_recyclarr"
-          -n:"Recyclarr"
-          -v:"${{ steps.gitversion.outputs.fullSemVer }}"
-          -d:sonar.login="${{ secrets.SONAR_TOKEN }}"
-          -d:sonar.host.url="https://sonarcloud.io"
-          -d:sonar.cs.opencover.reportsPaths="**/TestResults/*/coverage.opencover.xml"
-
-      # Run a full build command because if we just do the tests, it will not build everything.
-      - name: Build
-        run: dotnet build src
-
-      - name: Test
-        run: >
-          dotnet test src
-          --no-build
-          --collect:"XPLat Code Coverage"
-          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-
-      - name: End Sonar Scanner
-        run: >
-          dotnet sonarscanner end
-          -d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+      - name: Perform Scan
+        run: pwsh ci/RunSonarScan.ps1 -SonarToken "${{ secrets.SONAR_TOKEN }}"

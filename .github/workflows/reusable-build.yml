@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+on:
+  workflow_call:
+    inputs:
+      platform:
+        type: string
+        required: true
+      runtime:
+        type: string
+        required: true
+      publish-args:
+        type: string
+      skip-test:
+        type: boolean
+
+env:
+  dotnetVersion: 9.0.x
+
+jobs:
+  build:
+    name: Build, Test, Smoke
+    # Windows version info missing? See this:
+    # https://github.com/dotnet/runtime/issues/3828
+    runs-on: ${{ inputs.platform }}
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # avoid shallow clone for GitVersion
+
+      - name: Setup .NET Core SDK ${{ env.dotnetVersion }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.dotnetVersion }}
+
+      - name: Test
+        if: endsWith(inputs.runtime, 'x64') && !inputs.skip-test
+        run: dotnet test -c Release --logger GitHubActions
+
+      - name: Publish
+        shell: pwsh
+        run: ci/Publish.ps1 -Runtime ${{ inputs.runtime }} ${{ inputs.publish-args }}
+
+      - name: Smoke
+        if: endsWith(inputs.runtime, 'x64') && !inputs.skip-test
+        shell: pwsh
+        run: ci/SmokeTest.ps1 publish/${{ inputs.runtime }}/recyclarr
+
+      - name: Upload Artifact
+        uses: ./.github/actions/upload-tar
+        with:
+          name: ${{ inputs.runtime }}
+          path: publish/${{ inputs.runtime }}

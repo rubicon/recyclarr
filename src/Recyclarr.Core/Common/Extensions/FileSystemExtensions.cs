@@ -1,0 +1,125 @@
+using System.Diagnostics.CodeAnalysis;
+using System.IO.Abstractions;
+using System.Text.RegularExpressions;
+using Spectre.Console;
+
+namespace Recyclarr.Common.Extensions;
+
+[SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+public static class FileSystemExtensions
+{
+    public static void CreateParentDirectory(this IFileInfo f)
+    {
+        var parent = f.Directory;
+        parent?.Create();
+    }
+
+    public static void CreateParentDirectory(this IFileSystem fs, string? path)
+    {
+        var dirName = fs.Path.GetDirectoryName(path);
+        if (dirName is not null)
+        {
+            fs.Directory.CreateDirectory(dirName);
+        }
+    }
+
+    public static void CreateFullPath(this IFileInfo file)
+    {
+        file.CreateParentDirectory();
+        file.Create();
+    }
+
+    public static void MergeDirectory(
+        this IFileSystem fs,
+        IDirectoryInfo targetDir,
+        IDirectoryInfo destDir,
+        IAnsiConsole? console = null
+    )
+    {
+        var directories = targetDir
+            .EnumerateDirectories("*", SearchOption.AllDirectories)
+            .Append(targetDir)
+            .OrderByDescending(x => x.FullName.Count(y => y is '/' or '\\'));
+
+        foreach (var dir in directories)
+        {
+            console?.WriteLine($" - Attributes: {dir.Attributes}");
+
+            // Is it a symbolic link?
+            if ((dir.Attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                var newPath = RelocatePath(dir.FullName, targetDir.FullName, destDir.FullName);
+                fs.CreateParentDirectory(newPath);
+                console?.WriteLine($" - Symlink:  {dir.FullName} :: TO :: {newPath}");
+                dir.MoveTo(newPath);
+                continue;
+            }
+
+            // For real directories, move all the files inside
+            foreach (var file in dir.EnumerateFiles())
+            {
+                var newPath = RelocatePath(file.FullName, targetDir.FullName, destDir.FullName);
+                fs.CreateParentDirectory(newPath);
+                console?.WriteLine($" - Moving:   {file.FullName} :: TO :: {newPath}");
+                file.MoveTo(newPath);
+            }
+
+            // Delete the directory now that it is empty.
+            console?.WriteLine($" - Deleting: {dir.FullName}");
+            dir.Delete();
+        }
+    }
+
+    private static string RelocatePath(string path, string oldDir, string newDir)
+    {
+        return Regex.Replace(path, $"^{Regex.Escape(oldDir)}", newDir);
+    }
+
+    public static IFileInfo? YamlFile(this IDirectoryInfo dir, string yamlFilenameNoExtension)
+    {
+        var supportedFiles = new[]
+        {
+            $"{yamlFilenameNoExtension}.yml",
+            $"{yamlFilenameNoExtension}.yaml",
+        };
+        var configs = supportedFiles.Select(dir.File).Where(x => x.Exists).ToList();
+
+        if (configs.Count > 1)
+        {
+            throw new ConflictingYamlFilesException(supportedFiles);
+        }
+
+        return configs.FirstOrDefault();
+    }
+
+    public static void RecursivelyDeleteReadOnly(this IDirectoryInfo dir)
+    {
+        foreach (var info in dir.GetFileSystemInfos("*", SearchOption.AllDirectories))
+        {
+            info.Attributes = FileAttributes.Normal;
+        }
+
+        dir.Delete(true);
+    }
+
+    public static void DeleteReadOnlyDirectory(this IDirectoryInfo directory)
+    {
+        if (!directory.Exists)
+        {
+            return;
+        }
+
+        foreach (var subdirectory in directory.EnumerateDirectories())
+        {
+            DeleteReadOnlyDirectory(subdirectory);
+        }
+
+        foreach (var fileInfo in directory.EnumerateFiles())
+        {
+            fileInfo.Attributes = FileAttributes.Normal;
+            fileInfo.Delete();
+        }
+
+        directory.Delete();
+    }
+}
